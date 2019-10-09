@@ -1,0 +1,2 @@
+mqttbeat:
+  period: 1s
