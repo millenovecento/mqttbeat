@@ -10,13 +10,12 @@ import (
 	"github.com/elastic/beats/libbeat/beat"
 	"github.com/elastic/beats/libbeat/common"
 	"github.com/elastic/beats/libbeat/logp"
-	"github.com/elastic/beats/libbeat/publisher/bc/publisher"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 
 	"gopkg.in/vmihailenco/msgpack.v2"
 
-	"github.com/nathan-k-/mqttbeat/config"
+	"github.com/millenovecento/mqttbeat/config"
 )
 
 // Mqttbeat represent a mqtt beat object
