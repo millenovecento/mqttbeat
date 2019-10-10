@@ -22,7 +22,7 @@ import (
 type Mqttbeat struct {
 	done          chan struct{}
 	beatConfig    config.Config
-	elasticClient publisher.Client
+	elasticClient beat.Client
 	mqttClient    MQTT.Client
 }
 
@@ -31,6 +31,10 @@ func setupMqttClient(bt *Mqttbeat) {
 	mqttClientOpt := MQTT.NewClientOptions()
 	mqttClientOpt.AddBroker(bt.beatConfig.BrokerURL)
 	logp.Info("BROKER url: %s", bt.beatConfig.BrokerURL)
+	if bt.beatConfig.BrokerClientId != "" {
+		mqttClientOpt.SetClientID(bt.beatConfig.BrokerClientId)
+		logp.Info("BROKER url: %s", bt.beatConfig.BrokerClientId)
+	}
 	mqttClientOpt.SetConnectionLostHandler(bt.reConnectHandler)
 	mqttClientOpt.SetOnConnectHandler(bt.subscribeOnConnect)
 	
@@ -61,7 +65,7 @@ func (bt *Mqttbeat) subscribeOnConnect(client MQTT.Client) {
 	if token := bt.mqttClient.SubscribeMultiple(subscriptions, bt.onMessage); token.Wait() && token.Error() != nil {
 		panic(token.Error())
 	}
-	logp.Info("Subscribed to configured topics")
+	logp.Info("Subscribed to configured topics", bt.beatConfig.TopicsSubscribe)
 }
 
 // New function creates our mqtt beater
@@ -84,21 +88,34 @@ func New(b *beat.Beat, cfg *common.Config) (beat.Beater, error) {
 func (bt *Mqttbeat) onMessage(client MQTT.Client, msg MQTT.Message) {
 	logp.Debug("mqttbeat", "MQTT MESSAGE RECEIVED %s", string(msg.Payload()))
 
-	event := make(common.MapStr) // common.MapStr = map[string]interface{}
+	//event := make(common.MapStr) // common.MapStr = map[string]interface{}
+	mqttevent := make(common.MapStr)
 
 	if bt.beatConfig.DecodePaylod == true {
-		event = DecodePayload(msg.Payload())
+		mqttevent = DecodePayload(msg.Payload())
 	} else {
-		event = make(common.MapStr)
-		event["payload"] = msg.Payload()
+		mqttevent = make(common.MapStr)
+		mqttevent["payload"] = msg.Payload()
 	}
-
-	event["beat"] = common.MapStr{"index": "mqttbeat", "type": "message"}
+	logp.Debug("event", mqttevent.String())
+	/*event["beat"] = common.MapStr{"index": "mqttbeat", "type": "message"}
 	event["@timestamp"] = common.Time(time.Now())
-	event["topic"] = msg.Topic()
+	event["topic"] = msg.Topic()*/
+
+	event := beat.Event{
+		Timestamp: time.Now(),
+		Fields: common.MapStr{
+			/*"index": "mqttbeat",
+			"type": "message",*/
+			"message": mqttevent["payload"],
+			"topic": msg.Topic(),
+		},
+	}
 	// Finally sending the message to elasticsearch
-	published := bt.elasticClient.PublishEvent(event)
-	logp.Debug("mqttbeat", "Event sent: %t", published)
+	//published := bt.elasticClient.Publish(event)
+	bt.elasticClient.Publish(event)
+	logp.Debug("mqttbeat", "Event sent")
+	//logp.Debug("mqttbeat", "Event sent: %t", published)
 }
 
 // DefaultConnectionLostHandler does nothing
@@ -110,7 +127,12 @@ func (bt *Mqttbeat) reConnectHandler(client MQTT.Client, reason error) {
 // Run is used to start this beater, once configured and connected
 func (bt *Mqttbeat) Run(b *beat.Beat) error {
 	logp.Info("mqttbeat is running! Hit CTRL-C to stop it.")
-	bt.elasticClient = b.Publisher.Connect()
+	//bt.elasticClient = b.Publisher.Connect()
+	var err error
+	bt.elasticClient, err = b.Publisher.Connect()
+	if err != nil {
+		return err
+	}
 
 	// The mqtt client is asynchronous, so here we don't have anuthing to do
 	for {
