@@ -3,8 +3,18 @@
 ############################# Mqttbeat ######################################
 
 mqttbeat:
-  # Defines how often an event is sent to the output
-  period: 1s
+  # Url of the MQTT broker, with protocol and port
+  broker_url: ""
+  # MQTT broker username and password
+  broker_username: ""
+  broker_password: ""
+  broker_client_id: ""
+  # Try to decode the payload ? Support msgpack and json
+  decode_payload: true
+  # List of string?int, representing a topic and the associated QoS
+  # (between 0 and 2)- /device/+/status?1
+  topics_subscribe:
+    - test
 
 #================================ General =====================================
 
