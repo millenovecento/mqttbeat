@@ -2,8 +2,13 @@
   title: mqttbeat
   description:
   fields:
-    - name: counter
-      type: long
+    - name: topic
+      type: keyword
       required: true
       description: >
-        PLEASE UPDATE DOCUMENTATION
+        Mqtt topic
+    - name: message
+      type: keyword
+      required: true
+      description: >
+        Mqtt message text

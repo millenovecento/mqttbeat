@@ -4426,13 +4426,25 @@ type: keyword
 None
 
 
-*`counter`*::
+*`topic`*::
 +
 --
-PLEASE UPDATE DOCUMENTATION
+Mqtt topic
 
 
-type: long
+type: keyword
+
+required: True
+
+--
+
+*`message`*::
++
+--
+Mqtt message text
+
+
+type: keyword
 
 required: True
 

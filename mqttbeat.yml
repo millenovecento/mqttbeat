@@ -14,7 +14,7 @@ mqttbeat:
   # List of string?int, representing a topic and the associated QoS
   # (between 0 and 2)- /device/+/status?1
   topics_subscribe:
-    - test
+    - test?1
 
 #================================ General =====================================
 
